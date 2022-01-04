@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="https://www.thymeleaf.org"
+      xmlns:sec="https://www.thymeleaf.org/thymeleaf-extras-springsecurity3">
+<head>
+    <title>Home page</title>
+    <link th:href="@{/style.css}" rel="stylesheet"></link>
+</head>
+<body>
+<h2 th:inline="text">Hello [[${#httpServletRequest.remoteUser}]]!</h2>
+
+<div sec:authorize="isAuthenticated()">
+    <p>
+        Database Console <a th:href="@{/db-console}" target="_blank">here</a>
+    </p>
+</div>
+
+<div sec:authorize="hasRole('ROLE_ADMIN')">
+    <div>
+        <form class="add-feature" th:action="@{/features/add}" method="post">
+            <p>
+                <label for="featureName" class="sr-only">Feature name: </label>
+                <input type="text" id="featureName" name="featureName" class="form-control"
+                       placeholder="Feature name" required autofocus/>
+                <button class="btn btn-lg btn-primary btn-block" type="submit">Add</button>
+            </p>
+        </form>
+    </div>
+    <div>
+        <p><a th:href="@{/features/view}">Show all features</a>.</p>
+        <div th:unless="${#lists.isEmpty(allFeatures)}">
+            <form th:action="@{/features/update}" th:object="${allFeatures}" method="post">
+                <table border="1">
+                    <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Feature</th>
+                        <th>Users</th>
+                        <th>Switch for user</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="feature,featStat : ${allFeatures.features}">
+                        <td th:text="${feature.featureId}"></td>
+                        <td th:text="${feature.name}"></td>
+                        <td>
+                            <input type="hidden" th:field="*{features[__${featStat.index}__].featureId}">
+                            <select th:field="*{features[__${featStat.index}__].userSelected}"
+                                    class="form-control" id="featureUser">
+                                <option th:each="user : ${feature.users}"
+                                        th:value="${user.key}"
+                                        th:text="${user.key}"></option>
+                            </select>
+                        </td>
+                        <td>
+                            <select th:field="*{features[__${featStat.index}__].featureEnabled}" class="form-control"
+                                    id="featureEnabled">
+                                <option th:value="'true'" th:text="Enabled"></option>
+                                <option th:value="'false'" th:text="Disabled" th:selected="${true}"></option>
+                            </select>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+                <div>
+                    <button class="btn btn-lg btn-primary btn-block" type="submit">Save values</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<div sec:authorize="hasRole('ROLE_USER') or hasRole('ROLE_ADMIN')">
+    <p><a th:href="@{/features/enabled}">Show all enabled features</a>.</p>
+    <div th:unless="${#lists.isEmpty(enabledUserFeatures)}">
+        <table border="1">
+            <thead>
+            <tr>
+                <th>Feature ID</th>
+                <th>Feature name</th>
+                <th>Assigned to User</th>
+                <th>Enabled for User</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="userFeature : ${enabledUserFeatures}">
+                <td th:text="${userFeature.feature.featureId}"></td>
+                <td th:text="${userFeature.feature.name}"></td>
+                <td th:text="${userFeature.user.name}"></td>
+                <td th:text="${userFeature.enabled}"></td>
+            </tbody>
+        </table>
+    </div>
+</div>
+<br>
+<div sec:authorize="isAuthenticated()">
+    <form th:action="@{/logout}" method="post">
+        <input type="submit" value="Sign Out"/>
+    </form>
+</div>
+</body>
+</html>
